@@ -22,7 +22,7 @@ qm_alt = st.sidebar.slider('Durchschnittliche qm / Haus', min_value = 50, max_va
 cop_alt = st.sidebar.number_input(label = 'Angenommener COP', min_value = 0.0, max_value = 10.0, value = 2.5, step=0.1, key = "cop_alt")
 
 st.sidebar.write('Durchschnittshaus')
-st.sidebar.image("GEG.jpg", width=100)
+st.sidebar.image("geg.jpg", width=100)
 qm_geg = st.sidebar.slider('Durchschnittliche qm / Haus', min_value = 50, max_value = 250, value = 150, key = "qm_geg")
 cop_geg = st.sidebar.number_input(label = 'Angenommener COP', min_value = 0.0, max_value = 10.0, value = 3.0, step=0.1, key = "cop_geg")
 
