@@ -12,7 +12,7 @@ st.sidebar.title('Technische Einstellungen')
 
 st.sidebar.header('Bivalenz')
 bi = st.sidebar.slider('Bivalenzpunkt', min_value = -20, max_value = 20, value = -7, key = "bi")
-hs = st.sidebar.slider('% Heizstab (COP = 1)', min_value = 0.0, max_value = 1.0, value = 0.3, key = "hs")
+hs = st.sidebar.slider('% Heizstab (COP = 1) bei -20°C', min_value = 0.0, max_value = 1.0, value = 0.5, key = "hs")
 
 st.sidebar.header('Häusertypen')
 
@@ -22,7 +22,7 @@ qm_alt = st.sidebar.slider('Durchschnittliche qm / Haus', min_value = 50, max_va
 cop_alt = st.sidebar.number_input(label = 'Angenommener COP', min_value = 0.0, max_value = 10.0, value = 2.5, step=0.1, key = "cop_alt")
 
 st.sidebar.write('Durchschnittshaus')
-st.sidebar.image("geg.jpg", width=100)
+st.sidebar.image("GEG.jpg", width=100)
 qm_geg = st.sidebar.slider('Durchschnittliche qm / Haus', min_value = 50, max_value = 250, value = 150, key = "qm_geg")
 cop_geg = st.sidebar.number_input(label = 'Angenommener COP', min_value = 0.0, max_value = 10.0, value = 3.0, step=0.1, key = "cop_geg")
 
@@ -47,9 +47,9 @@ col1, col2, col3 = st.columns(3)
 with col1:
     n_alt = st.number_input(label = 'Altbauten', min_value = 0.0, max_value = 10.0, value = 0.0, step=0.5, key = "n_alt")
 with col2:
-    n_geg = st.number_input(label = 'Durchschnittshaus', min_value = 0.0, max_value = 10.0, value = 0.5, step=0.5, key = "n_geg")
+    n_geg = st.number_input(label = 'Durchschnittshaus', min_value = 0.0, max_value = 10.0, value = 1.0, step=0.5, key = "n_geg")
 with col3:
-    n_ph = st.number_input(label = 'Passivhäuser', min_value = 0.0, max_value = 10.0, value = 0.0, step=0.5, key = "n_ph")
+    n_ph = st.number_input(label = 'Passivhäuser', min_value = 0.0, max_value = 10.0, value = 0.5, step=0.5, key = "n_ph")
 
 wp = pd.read_csv("WPdaten1.csv", sep=";")
 rng = pd.date_range('2021-01-01', periods=8760, freq='h')
@@ -58,12 +58,19 @@ wp.set_index('Zeit', inplace=True)
 wp.columns = ['Temp','Heat_Alt','Heat_GEG','Heat_PH','Load_Base','Wind_Onshore','Wind_Offshore','PV','WW']
 wp['Load_Base']=1.1*wp['Load_Base']/1000
 wp['Null'] = 0
-wp['Load_Alt']  = np.where(wp['Temp']>bi,n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/cop_alt,hs*n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/1+(1-hs)*n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/cop_alt)
-wp['Load_GEG']  = np.where(wp['Temp']>bi,n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/cop_geg,hs*n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/1 + (1-hs)*n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/cop_geg)
-wp['Load_PH']  = np.where(wp['Temp']>bi,n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/cop_ph,hs*n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/1 + (1-hs)*n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/cop_ph)
-wp['Load_Alt']  = np.where((wp.index>'2021-06-01')&(wp.index<'2021-09-01'),n_alt*qm_alt*1000*(wp['WW'])/cop_alt,wp['Load_Alt'])
-wp['Load_GEG']  = np.where((wp.index>'2021-06-01')&(wp.index<'2021-09-01'),n_geg*qm_geg*1000*(wp['WW'])/cop_geg,wp['Load_GEG'])
-wp['Load_PH']  = np.where((wp.index>'2021-06-01')&(wp.index<'2021-09-01'),n_ph*qm_ph*1000*(wp['WW'])/cop_ph,wp['Load_PH'])
+#wp['Load_Alt']  = np.where(wp['Temp']>bi,n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/cop_alt,hs*n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/1+(1-hs)*n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/cop_alt)
+#wp['Load_GEG']  = np.where(wp['Temp']>bi,n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/cop_geg,hs*n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/1 + (1-hs)*n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/cop_geg)
+#wp['Load_PH']  = np.where(wp['Temp']>bi,n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/cop_ph,hs*n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/1 + (1-hs)*n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/cop_ph)
+copt_alt=cop_alt+0.07*wp['Temp']
+copt_geg=cop_geg+0.07*wp['Temp']
+copt_ph=cop_ph+0.07*wp['Temp']
+hst=hs*(wp['Temp']-bi)/(-21-bi)
+wp['Load_Alt']  = np.where(wp['Temp']>bi,n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/copt_alt,hst*n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/1+(1-hst)*n_alt*qm_alt*1000*(wp['Heat_Alt']+wp['WW'])/copt_alt)
+wp['Load_GEG']  = np.where(wp['Temp']>bi,n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/copt_geg,hst*n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/1 + (1-hst)*n_geg*qm_geg*1000*(wp['Heat_GEG']+wp['WW'])/copt_geg)
+wp['Load_PH']  = np.where(wp['Temp']>bi,n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/copt_ph,hst*n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/1 + (1-hst)*n_ph*qm_ph*1000*(wp['Heat_PH']+wp['WW'])/copt_ph)
+wp['Load_Alt']  = np.where((wp.index>'2021-06-01')&(wp.index<'2021-09-01'),n_alt*qm_alt*1000*(wp['WW'])/copt_alt,wp['Load_Alt'])
+wp['Load_GEG']  = np.where((wp.index>'2021-06-01')&(wp.index<'2021-09-01'),n_geg*qm_geg*1000*(wp['WW'])/copt_geg,wp['Load_GEG'])
+wp['Load_PH']  = np.where((wp.index>'2021-06-01')&(wp.index<'2021-09-01'),n_ph*qm_ph*1000*(wp['WW'])/copt_ph,wp['Load_PH'])
 wp['Load_WP'] = wp['Load_Alt'] + wp['Load_GEG'] + wp['Load_PH']
 wp['Load_Base_WP'] = wp['Load_Base'] + wp['Load_WP'] 
 
@@ -82,8 +89,16 @@ cd1['Load_WP'] = cd1['Load_WP'].map('{:,.1f}'.format)
 cd1['Load_Base'] = cd1['Load_Base'].map('{:,.1f}'.format)
 cd1['Load_Base_WP'] = cd1['Load_Base_WP'].map('{:,.1f}'.format)
 cd1.index = ['Jahresstrommenge in TWh','Peaklast in GW']
-cd1.columns = ['Wärmepumpen','Strom sonst.','Strom inkl. WP']
+cd1.columns = ['Wärmepumpen','Strom allgemein','Strom inkl. WP']
 
+# fig0 = px.line(wp, x=wp.index, y=copt_alt, title="COPT_ALT")
+# st.write(fig0)
+
+# fig00 = px.line(wp, x=wp['Temp'], y=copt_alt, title="COP")
+# st.write(fig00)
+
+# figtemp = px.line(wp, x=wp.index, y=wp['Temp'])
+# st.write(figtemp)
 
 fig1 = px.line(wp, x=wp.index, y=wp.Null, width=850, height=500)
 fig1.update_layout(
@@ -102,7 +117,7 @@ fig1.add_traces(go.Scatter(x=wp.index, y=wp['Load_WP'],
                            #visible='legendonly',
                            line=dict(color='blue', width=1)))
 fig1.add_traces(go.Scatter(x=wp.index, y=wp['Load_Base'], 
-                           name = 'Strom sonst.', 
+                           name = 'Strom allgemein', 
                            visible='legendonly',
                            line=dict(color='firebrick', width=1)))
 fig1.add_traces(go.Scatter(x=wp.index, y=wp['Load_Base_WP'],
@@ -161,7 +176,7 @@ fig2.update_layout(
 fig2.update_traces(line_color='white', line_width=1)
 
 fig2.add_traces(go.Scatter(x=wp.index, y=wp['Load_Base'], 
-                           name = 'Strom sonst.', 
+                           name = 'Strom allgemein', 
                            visible='legendonly',
                            line=dict(color='firebrick', width=1)))
 fig2.add_traces(go.Scatter(x=wp.index, y=wp['Load_Base_WP'],
